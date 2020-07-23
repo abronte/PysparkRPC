@@ -9,7 +9,6 @@ import pyspark.ml.functions
 from pysparkapi.proxy import Proxy
 from pysparkapi.api_client import APIClient
 
-import requests
 import cloudpickle
 import sys
 

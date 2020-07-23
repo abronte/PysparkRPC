@@ -71,6 +71,10 @@ class APIClient(object):
             return None
 
     @classmethod
+    def clear(cls):
+        httpx.get(PROXY_URL+'/clear')
+
+    @classmethod
     def _prepare_args(cls, args, kwargs):
         prepared_args = []
         prepared_kwargs = {}

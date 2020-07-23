@@ -196,6 +196,23 @@ def call():
 def health():
     return 'OK'
 
+@app.route('/clear', methods=['POST', 'GET'])
+def clear():
+    global OBJECTS
+
+    sc = pyspark.SparkContext.getOrCreate()
+    sc.stop()
+
+    OBJECTS = {}
+
+    return 'OK'
+
+def run(*args, **kwargs):
+    if 'port' not in kwargs:
+        kwargs['port'] = 8765
+
+    app.run(*args, **kwargs)
+
 if __name__ == '__main__':
     app.run(host='127.0.0.1', debug=True, use_reloader=False, port=8765)
     # app.run(debug=True, use_reloader=False, port=8765, certfile='/etc/ssl/localhost/localhost.crt', keyfile='/etc/ssl/localhost/localhost.key')

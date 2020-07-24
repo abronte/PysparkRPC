@@ -57,7 +57,8 @@ BUILTIN_FUNCS = [
 
 PICKLE_FUNCS = [
     'parallelize',
-    'createDataFrame'
+    'createDataFrame',
+    'predict'
 ]
 
 def inject():

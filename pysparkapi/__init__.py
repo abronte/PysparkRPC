@@ -31,7 +31,9 @@ TARGET_OBJS = [
 TARGET_ALL_MODULES = [
     pyspark.ml.classification,
     pyspark.ml.clustering,
-    pyspark.ml.regression
+    pyspark.ml.regression,
+    pyspark.ml.fpm,
+    pyspark.ml.recommendation
 ]
 
 MONKEY_PATCH_FUNCS = {

@@ -17,4 +17,4 @@ jobs:
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag pysparkapi:ci
     - name: Run Tests
-      run: docker run -it pysparkapi:ci
+      run: docker run -t pysparkapi:ci

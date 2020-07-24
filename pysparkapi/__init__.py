@@ -22,9 +22,10 @@ TARGET_OBJS = [
     pyspark.sql.DataFrame,
     pyspark.sql.DataFrameReader,
     pyspark.sql.DataFrameWriter,
+    pyspark.sql.group.GroupedData,
     pyspark.sql.session.SparkSession,
     pyspark.sql.column.Column,
-    pyspark.sql.udf.UDFRegistration,
+    pyspark.sql.udf.UDFRegistration
 ]
 
 TARGET_ALL_MODULES = [

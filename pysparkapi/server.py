@@ -200,10 +200,11 @@ def health():
 def clear():
     global OBJECTS
 
-    sc = pyspark.SparkContext.getOrCreate()
-    sc.stop()
+    if len(OBJECTS) > 0:
+        sc = pyspark.SparkContext.getOrCreate()
+        sc.stop()
 
-    OBJECTS = {}
+        OBJECTS = {}
 
     return 'OK'
 

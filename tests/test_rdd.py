@@ -1,5 +1,8 @@
 import pytest
 
+from pyspark.sql.types import Row
+from pyspark.ml.linalg import Vectors
+
 sc = pytest.sc
 
 def test_range():
@@ -31,6 +34,12 @@ def test_sum():
 def test_flatmap():
     rdd = sc.parallelize([2, 3, 4])
     assert sorted(rdd.flatMap(lambda x: range(1, x)).collect()) == [1, 1, 1, 2, 2, 3]
+
+def test_to_df():
+    rdd = sc.parallelize([Row(features=Vectors.dense([1.0, 0.0]))])
+    df = rdd.toDF()
+
+    assert df.__class__.__name__ == 'DataFrame'
 
 # doesn't work
 # def test_to_localiterator():

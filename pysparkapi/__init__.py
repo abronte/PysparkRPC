@@ -34,6 +34,10 @@ TARGET_ALL_MODULES = [
     pyspark.ml.regression
 ]
 
+MONKEY_PATCH_FUNCS = {
+    pyspark.rdd.RDD: ['toDF']
+}
+
 for m in TARGET_ALL_MODULES:
     for c in getattr(m, '__all__'):
         TARGET_OBJS.append(getattr(m, c))
@@ -99,6 +103,13 @@ def _build_class(obj, path=None):
             patch_func = FunctionType(patch_code.co_consts[0], globals())
             setattr(proxy_class, f, patch_func)
             print(f'{f} built in')
+
+    if obj in MONKEY_PATCH_FUNCS:
+        for f in MONKEY_PATCH_FUNCS[obj]:
+            patch_code = compile(f'def {f}(self, *args, **kwargs): return APIClient.call(self._id, self._path, "{f}", args, kwargs)', '<string>', 'exec')
+            patch_func = FunctionType(patch_code.co_consts[0], globals())
+            setattr(proxy_class, f, patch_func)
+            print(f'{f} monkey patch')
 
     for f in obj_names:
         print(f)

@@ -11,7 +11,7 @@ RUN ln -s /root/.poetry/bin/poetry /usr/bin/poetry
 ADD . /srv
 WORKDIR /srv
 
-RUN poetry export -f requirements.txt && pip install -r requirements.txt
+RUN poetry export -f requirements.txt > requirements.txt && pip install -r requirements.txt
 
 ENV PYTHONPATH /srv
 

@@ -20,7 +20,7 @@ def _copy_func(f):
 
 class APIClient(object):
     _req_num = 0
-    http = httpx.Client()
+    http = httpx.Client(timeout=60.0)
 
     @classmethod
     def call(cls, object_id, path, function, args=(), kwargs={}, is_property=False, is_item=False, create=False):
@@ -44,11 +44,11 @@ class APIClient(object):
 
         print(body)
 
-        cls.http.post(PROXY_URL+'/call', json=body, timeout=60.0)
+        cls.http.post(PROXY_URL+'/call', json=body)
         cls._req_num += 1
 
         while True:
-            r = cls.http.get(PROXY_URL+'/response', timeout=60.0)
+            r = cls.http.get(PROXY_URL+'/response')
             resp = r.json()
 
             if resp['status'] == 'complete':

@@ -2,6 +2,7 @@ import types
 import functools
 import base64
 import pickle
+import time
 
 import httpx
 import cloudpickle
@@ -18,6 +19,9 @@ def _copy_func(f):
     return g
 
 class APIClient(object):
+    _req_num = 0
+    http = httpx.Client(timeout=60.0)
+
     @classmethod
     def call(cls, object_id, path, function, args=(), kwargs={}, is_property=False, is_item=False, create=False):
         if function in pysparkapi.PICKLE_FUNCS:
@@ -40,9 +44,24 @@ class APIClient(object):
 
         print(body)
 
-        r = httpx.post(PROXY_URL+'/call', json=body, timeout=60.0)
-        resp = r.json()
+        cls.http.post(PROXY_URL+'/call', json=body)
+        cls._req_num += 1
 
+        while True:
+            r = cls.http.get(PROXY_URL+'/response')
+            resp = r.json()
+
+            if resp['status'] == 'complete':
+                return cls._handle_response(resp, create)
+
+            time.sleep(0.1)
+
+    @classmethod
+    def clear(cls):
+        cls.http.get(PROXY_URL+'/clear')
+
+    @classmethod
+    def _handle_response(cls, resp, create):
         if resp['stdout'] != []:
             print('\n'.join(resp['stdout']))
 
@@ -69,10 +88,6 @@ class APIClient(object):
                 return resp['value']
         else:
             return None
-
-    @classmethod
-    def clear(cls):
-        httpx.get(PROXY_URL+'/clear')
 
     @classmethod
     def _prepare_args(cls, args, kwargs):

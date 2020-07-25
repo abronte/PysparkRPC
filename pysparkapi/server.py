@@ -4,6 +4,7 @@ import sys
 import types
 import pickle
 import base64
+import threading, queue
 
 import pysparkapi
 import pyspark
@@ -14,6 +15,9 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 OBJECTS = {}
+
+REQ_QUEUE = queue.Queue()
+RESP_QUEUE = queue.Queue()
 
 class Capture(list):
     def __enter__(self):
@@ -123,6 +127,76 @@ def handle_object(obj, result={}):
 
     return result
 
+def call_worker():
+    global OBJECTS, REQ_QUEUE, RESP_QUEUE
+
+    while True:
+        req = REQ_QUEUE.get()
+        REQ_QUEUE.task_done()
+
+        print('Request:')
+        print(req)
+        res_obj = None
+
+        resp = {
+            'status': 'complete',
+            'object': False,
+            'object_id': None,
+            'module': None,
+            'class': None,
+            'exception': False,
+            'stdout': None
+        }
+
+        if req['object_id'] != None:
+            obj = OBJECTS[req['object_id']]
+
+            if req['function'] != None:
+                callable_obj = getattr(obj, req['function'])
+            else:
+                callable_obj = obj
+        else:
+            # have to loop through the module path and getattr
+            # one by one because importing the whole module str
+            # isn't always valid. For example pyspark.sql.session.SparkSession.Builder
+            module_paths = req['path'].split('.')
+            base_module = __import__(module_paths[0])
+
+            module = base_module
+
+            if len(module_paths) > 1:
+                for m in module_paths[1:]:
+                    module = getattr(module, m)
+
+            if req['function'] != None:
+                callable_obj = getattr(module, req['function'])
+            # if no function is passed, it means the base object needs init
+            else:
+                callable_obj = module
+
+        args, kwargs = parse_request_args(req['function'], req['args'], req['kwargs'])
+        print(args)
+        print(kwargs)
+
+        with Capture() as stdout:
+            if req['is_property']:
+                res_obj = callable_obj
+            elif req['is_item']:
+                res_obj = callable_obj[req['function']]
+            else:
+                res_obj = callable_obj(*args, **kwargs)
+
+        resp['stdout'] = stdout
+
+        print(res_obj)
+
+        resp = handle_object(res_obj, resp)
+
+        print('Response:')
+        print(resp)
+
+        RESP_QUEUE.put(resp)
+
 @app.route('/call', methods=['POST'])
 def call():
     global OBJECTS
@@ -130,66 +204,18 @@ def call():
     print('/call')
 
     req = request.json
+    REQ_QUEUE.put(req)
 
-    print('Request:')
-    print(req)
-    res_obj = None
+    return 'OK'
 
-    resp = {
-        'object': False,
-        'object_id': None,
-        'module': None,
-        'class': None,
-        'exception': False,
-        'stdout': None
-    }
-
-    if req['object_id'] != None:
-        obj = OBJECTS[req['object_id']]
-
-        if req['function'] != None:
-            callable_obj = getattr(obj, req['function'])
-        else:
-            callable_obj = obj
+@app.route('/response', methods=['GET'])
+def response():
+    if RESP_QUEUE.empty():
+        resp = {'status':'pending'}
     else:
-        # have to loop through the module path and getattr
-        # one by one because importing the whole module str
-        # isn't always valid. For example pyspark.sql.session.SparkSession.Builder
-        module_paths = req['path'].split('.')
-        base_module = __import__(module_paths[0])
+        resp = RESP_QUEUE.get()
+        RESP_QUEUE.task_done()
 
-        module = base_module
-
-        if len(module_paths) > 1:
-            for m in module_paths[1:]:
-                module = getattr(module, m)
-
-        if req['function'] != None:
-            callable_obj = getattr(module, req['function'])
-        # if no function is passed, it means the base object needs init
-        else:
-            callable_obj = module
-
-    args, kwargs = parse_request_args(req['function'], req['args'], req['kwargs'])
-    print(args)
-    print(kwargs)
-
-    with Capture() as stdout:
-        if req['is_property']:
-            res_obj = callable_obj
-        elif req['is_item']:
-            res_obj = callable_obj[req['function']]
-        else:
-            res_obj = callable_obj(*args, **kwargs)
-
-    resp['stdout'] = stdout
-
-    print(res_obj)
-
-    resp = handle_object(res_obj, resp)
-
-    print('Response:')
-    print(resp)
     return jsonify(resp)
 
 @app.route('/health', methods=['GET'])
@@ -209,11 +235,13 @@ def clear():
     return 'OK'
 
 def run(*args, **kwargs):
+    threading.Thread(target=call_worker, daemon=True).start()
+
     if 'port' not in kwargs:
         kwargs['port'] = 8765
 
     app.run(*args, **kwargs)
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', debug=True, use_reloader=False, port=8765)
+    run(host='127.0.0.1', debug=True, use_reloader=False, port=8765)
     # app.run(debug=True, use_reloader=False, port=8765, certfile='/etc/ssl/localhost/localhost.crt', keyfile='/etc/ssl/localhost/localhost.key')

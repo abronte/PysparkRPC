@@ -4,11 +4,11 @@ from pyspark.ml.fpm import FPGrowth
 
 spark = pytest.spark
 
-data = spark.createDataFrame(
-            [([1, 2], ), ([1, 2], ), ([1, 2, 3], ), ([1, 3], )],
-            ["items"])
-
 def test_association_rules():
+    data = spark.createDataFrame(
+                [([1, 2], ), ([1, 2], ), ([1, 2, 3], ), ([1, 3], )],
+                ["items"])
+
     fp = FPGrowth()
     fpm = fp.fit(data)
 
@@ -23,6 +23,10 @@ def test_association_rules():
     assert expected_association_rules.subtract(actual_association_rules).count() == 0
 
 def test_freq_itemsets():
+    data = spark.createDataFrame(
+                [([1, 2], ), ([1, 2], ), ([1, 2, 3], ), ([1, 3], )],
+                ["items"])
+
     fp = FPGrowth()
     fpm = fp.fit(data)
 

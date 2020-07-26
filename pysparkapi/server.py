@@ -234,13 +234,14 @@ def health():
 
 @app.route('/clear', methods=['POST', 'GET'])
 def clear():
-    global OBJECTS
+    global OBJECTS, RESPONSE_CACHE
 
     if len(OBJECTS) > 0:
         sc = pyspark.SparkContext.getOrCreate()
         sc.stop()
 
         OBJECTS = {}
+        RESPONSE_CACHE = {}
 
     return 'OK'
 

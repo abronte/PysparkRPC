@@ -71,6 +71,9 @@ class APIClient(object):
         if resp['stdout'] != []:
             print('\n'.join(resp['stdout']))
 
+        if resp['exception']:
+            raise Exception(resp['exception'])
+
         if resp['object']:
             if resp['object_id'] != None:
                 obj_id = resp['object_id']

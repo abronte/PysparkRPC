@@ -153,7 +153,7 @@ def call_worker():
             'object_id': None,
             'module': None,
             'class': None,
-            'exception': False,
+            'exception': None,
             'stdout': None
         }
 
@@ -187,13 +187,16 @@ def call_worker():
         print(args)
         print(kwargs)
 
-        with Capture() as stdout:
-            if req['is_property']:
-                res_obj = callable_obj
-            elif req['is_item']:
-                res_obj = callable_obj[req['function']]
-            else:
-                res_obj = callable_obj(*args, **kwargs)
+        try:
+            with Capture() as stdout:
+                if req['is_property']:
+                    res_obj = callable_obj
+                elif req['is_item']:
+                    res_obj = callable_obj[req['function']]
+                else:
+                    res_obj = callable_obj(*args, **kwargs)
+        except Exception as e:
+            resp['exception'] = str(e)
 
         resp['stdout'] = stdout
 

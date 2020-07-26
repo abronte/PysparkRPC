@@ -15,6 +15,7 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 OBJECTS = {}
+RESPONSE_CACHE = {}
 
 REQ_QUEUE = queue.Queue()
 RESP_QUEUE = queue.Queue()
@@ -128,7 +129,7 @@ def handle_object(obj, result={}):
     return result
 
 def call_worker():
-    global OBJECTS, REQ_QUEUE, RESP_QUEUE
+    global OBJECTS, REQ_QUEUE, RESP_QUEUE, RESPONSE_CACHE
 
     while True:
         req = REQ_QUEUE.get()
@@ -136,6 +137,14 @@ def call_worker():
 
         print('Request:')
         print(req)
+
+        digest = req['digest']
+
+        if digest in RESPONSE_CACHE:
+            print(f'Returning cached response for {digest}')
+            RESP_QUEUE.put(RESPONSE_CACHE[digest])
+            continue
+
         res_obj = None
 
         resp = {
@@ -195,6 +204,7 @@ def call_worker():
         print('Response:')
         print(resp)
 
+        RESPONSE_CACHE[digest] = resp
         RESP_QUEUE.put(resp)
 
 @app.route('/call', methods=['POST'])
@@ -224,13 +234,14 @@ def health():
 
 @app.route('/clear', methods=['POST', 'GET'])
 def clear():
-    global OBJECTS
+    global OBJECTS, RESPONSE_CACHE
 
     if len(OBJECTS) > 0:
         sc = pyspark.SparkContext.getOrCreate()
         sc.stop()
 
         OBJECTS = {}
+        RESPONSE_CACHE = {}
 
     return 'OK'
 
@@ -244,4 +255,3 @@ def run(*args, **kwargs):
 
 if __name__ == '__main__':
     run(host='127.0.0.1', debug=True, use_reloader=False, port=8765)
-    # app.run(debug=True, use_reloader=False, port=8765, certfile='/etc/ssl/localhost/localhost.crt', keyfile='/etc/ssl/localhost/localhost.key')

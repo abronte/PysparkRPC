@@ -3,6 +3,8 @@ import functools
 import base64
 import pickle
 import time
+import hashlib
+import json
 
 import httpx
 import cloudpickle
@@ -39,13 +41,15 @@ class APIClient(object):
             'args': function_args[0],
             'kwargs': function_args[1],
             'is_property': is_property,
-            'is_item': is_item
+            'is_item': is_item,
+            'req_num': cls._req_num # used to salt digests incase multiple objects are created with the same params
         }
+
+        body['digest'] = hashlib.sha1(json.dumps(body).encode('utf-8')).hexdigest()
 
         print(body)
 
         cls.http.post(PROXY_URL+'/call', json=body)
-        cls._req_num += 1
 
         while True:
             r = cls.http.get(PROXY_URL+'/response')
@@ -55,6 +59,8 @@ class APIClient(object):
                 return cls._handle_response(resp, create)
 
             time.sleep(0.1)
+
+        cls._req_num += 1
 
     @classmethod
     def clear(cls):

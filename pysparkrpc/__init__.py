@@ -15,8 +15,8 @@ from pyspark.version import __version__ as PYSPARK_VERSION
 import pyspark.sql.functions
 import pyspark.ml
 
-from pysparkapi.proxy import Proxy
-from pysparkapi.api_client import APIClient
+from pysparkrpc.proxy import Proxy
+from pysparkrpc.api_client import APIClient
 
 __version__ = '0.1.0'
 

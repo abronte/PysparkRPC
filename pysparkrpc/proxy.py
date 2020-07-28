@@ -1,4 +1,4 @@
-from pysparkapi.api_client import APIClient
+from pysparkrpc.api_client import APIClient
 
 import cloudpickle
 import sys

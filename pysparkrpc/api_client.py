@@ -9,7 +9,7 @@ import json
 import httpx
 import cloudpickle
 
-import pysparkapi
+import pysparkrpc
 
 PROXY_URL = 'http://localhost:8765'
 

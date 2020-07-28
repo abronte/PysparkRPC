@@ -6,7 +6,7 @@ import pickle
 import base64
 import threading, queue
 
-import pysparkapi
+import pysparkrpc
 
 import pyspark
 import pyspark.sql.functions

@@ -76,6 +76,14 @@ immutables = ">=0.9"
 
 [[package]]
 category = "main"
+description = "Find pyspark to make it importable."
+name = "findspark"
+optional = false
+python-versions = "*"
+version = "1.4.2"
+
+[[package]]
+category = "main"
 description = "A simple framework for building complex web applications."
 name = "flask"
 optional = false
@@ -374,7 +382,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "07b0e46a7e64bbd19cbeeccb6f38f2c55aab391c49c42987f1838e98cfd04630"
+content-hash = "06656e4473be635e244f5cd942cb883e567f031e515e1d5af6ed80ccf2c0bb54"
 lock-version = "1.0"
 python-versions = ">=3.6"
 
@@ -409,6 +417,10 @@ colorama = [
 ]
 contextvars = [
     {file = "contextvars-2.4.tar.gz", hash = "sha256:f38c908aaa59c14335eeea12abea5f443646216c4e29380d7bf34d2018e2c39e"},
+]
+findspark = [
+    {file = "findspark-1.4.2-py2.py3-none-any.whl", hash = "sha256:4eeb6d831b28cb869da8f4f1a24eb7ff1b51f11c17e44a713fedc9556ab2ccfe"},
+    {file = "findspark-1.4.2.tar.gz", hash = "sha256:6d52971f4417e976aea21aea0f4ac7e470fa365d6139100e03fb76b76eb97da0"},
 ]
 flask = [
     {file = "Flask-1.1.2-py2.py3-none-any.whl", hash = "sha256:8a4fdd8936eba2512e9c85df320a37e694c93945b33ef33c89946a340a238557"},

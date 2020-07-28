@@ -1,16 +1,22 @@
 from types import FunctionType
 import sys
+import os
+
+# findspark might not work for virtual env or non-standard
+# install path but spark still may be available to python
+try:
+    import findspark
+    findspark.init()
+except:
+    pass
 
 import pyspark
+from pyspark.version import __version__ as PYSPARK_VERSION
 import pyspark.sql.functions
 import pyspark.ml
-import pyspark.ml.functions
 
 from pysparkapi.proxy import Proxy
 from pysparkapi.api_client import APIClient
-
-import cloudpickle
-import sys
 
 __version__ = '0.1.0'
 
@@ -45,8 +51,7 @@ for m in TARGET_ALL_MODULES:
         TARGET_OBJS.append(getattr(m, c))
 
 TARGET_FUNCTIONS = [
-    pyspark.sql.functions,
-    pyspark.ml.functions
+    pyspark.sql.functions
 ]
 
 BUILTIN_FUNCS = [
@@ -64,6 +69,8 @@ PICKLE_FUNCS = [
 ]
 
 def inject():
+    _handle_spark_versions()
+
     for m in TARGET_FUNCTIONS:
         _build_functions(m)
 
@@ -80,20 +87,23 @@ def inject():
 
         setattr(sys.modules[obj_module], obj_name, globals()[obj_name])
 
+def _handle_spark_versions():
+    major = PYSPARK_VERSION[0]
+
+    if major == '3':
+        import pyspark.ml.functions
+        TARGET_FUNCTIONS.append(pyspark.ml.functions)
+
 def _build_class(obj, path=None):
     obj_name = obj.__name__
     obj_module = obj.__module__
 
+    # don't patch any non-pyspark objects
     if 'pyspark' not in obj_module:
-        print('NOT A PYSPARK OBJECT, SKIPPING')
         return
 
     if path == None:
         path = f'{obj.__module__}.{obj_name}'
-    else:
-        print(f'Forcing path: {path}')
-
-    print(f'Processing {path}')
 
     proxy_class = globals()[obj_name]
     setattr(proxy_class, '_path', path)
@@ -105,58 +115,43 @@ def _build_class(obj, path=None):
             patch_code = compile(f'def {f}(self, *args, **kwargs): return APIClient.call(self._id, self._path, "{f}", args, kwargs)', '<string>', 'exec')
             patch_func = FunctionType(patch_code.co_consts[0], globals())
             setattr(proxy_class, f, patch_func)
-            print(f'{f} built in')
 
     if obj in MONKEY_PATCH_FUNCS:
         for f in MONKEY_PATCH_FUNCS[obj]:
             patch_code = compile(f'def {f}(self, *args, **kwargs): return APIClient.call(self._id, self._path, "{f}", args, kwargs)', '<string>', 'exec')
             patch_func = FunctionType(patch_code.co_consts[0], globals())
             setattr(proxy_class, f, patch_func)
-            print(f'{f} monkey patch')
 
     for f in obj_names:
-        print(f)
 
         if ('__' in f and f not in BUILTIN_FUNCS) or f[0] == '_':
             continue
 
         class_name = getattr(obj, f).__class__.__name__
 
-        # clean this up, just call API client directly
         if hasattr(getattr(obj, f), '__self__'):
-            print(f'{f} is a class method')
-
             patch_code = compile(f'def {f}(cls, *args, **kwargs): return APIClient.call(None, cls._path, "{f}", args, kwargs)', '<string>', 'exec')
             patch_func = FunctionType(patch_code.co_consts[0], globals())
 
             setattr(proxy_class, f, classmethod(patch_func))
-        # clean this up, just call APIClietn directly
         elif class_name == 'property':
             patch_code = compile(f'def {f}(self, *args, **kwargs): return APIClient.call(self._id, self._path, "{f}", is_property=True)', '<string>', 'exec')
             patch_func = FunctionType(patch_code.co_consts[0], globals())
+
             setattr(proxy_class, f, property(patch_func))
-            print(f'{f} property')
         elif class_name == 'function':
             patch_code = compile(f'def {f}(self, *args, **kwargs): return APIClient.call(self._id, self._path, "{f}", args, kwargs)', '<string>', 'exec')
             patch_func = FunctionType(patch_code.co_consts[0], globals())
-            setattr(proxy_class, f, patch_func)
-            print(f'{f} function')
-        elif class_name != 'function' and class_name != 'type':
-            print(f'{f} is a class stored in a property as class {class_name}')
 
-            # WORKING: creating subclass
+            setattr(proxy_class, f, patch_func)
+        elif class_name != 'function' and class_name != 'type':
             prop_class = getattr(obj, f).__class__
             prop_class_name = prop_class.__name__
-
-            print(prop_class)
-            print(prop_class_name)
 
             c = type(prop_class_name, (Proxy,), {'_propclass':True})
             globals()[prop_class_name] = c
 
             _build_class(prop_class, path=f'{obj_module}.{obj_name}.{f}')
-
-            print('')
 
             # assuming the class has to be initialized
             # TODO: maybe this should be added to the base class init?
@@ -167,8 +162,6 @@ def _build_functions(module):
         class_name = getattr(module, f).__class__.__name__
 
         if '__' not in f and f[0] != '_' and class_name == 'function':
-            print(f)
-
             patch_code = compile(f'def {f}(*args, **kwargs): return APIClient.call(None, "{module.__name__}", "{f}", args, kwargs)', '<string>', 'exec')
             patch_func = FunctionType(patch_code.co_consts[0], globals())
             setattr(module, f, patch_func)

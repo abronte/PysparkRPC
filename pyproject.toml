@@ -9,6 +9,7 @@ python = ">=3.6"
 flask = "^1.1.2"
 cloudpickle = "^1.5.0"
 httpx = "^0.13.3"
+findspark = "^1.4.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

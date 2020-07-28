@@ -6,7 +6,7 @@ import pickle
 import base64
 import threading, queue
 
-import pysparkapi
+import pysparkrpc
 
 import pyspark
 import pyspark.sql.functions
@@ -49,7 +49,7 @@ def parse_request_args(function, request_args, request_kwargs):
     args = []
     kwargs = {}
 
-    if function in pysparkapi.PICKLE_FUNCS:
+    if function in pysparkrpc.PICKLE_FUNCS:
         args = cloudpickle.loads(base64.b64decode(request_args))
         kwargs = cloudpickle.loads(base64.b64decode(request_kwargs))
     else:

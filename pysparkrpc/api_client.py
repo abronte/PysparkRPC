@@ -9,7 +9,7 @@ import json
 import httpx
 import cloudpickle
 
-import pysparkapi
+import pysparkrpc
 
 PROXY_URL = 'http://localhost:8765'
 
@@ -26,7 +26,7 @@ class APIClient(object):
 
     @classmethod
     def call(cls, object_id, path, function, args=(), kwargs={}, is_property=False, is_item=False, create=False):
-        if function in pysparkapi.PICKLE_FUNCS:
+        if function in pysparkrpc.PICKLE_FUNCS:
             function_args = [
                str(base64.b64encode(cloudpickle.dumps(args)), 'utf-8'),
                str(base64.b64encode(cloudpickle.dumps(kwargs)), 'utf-8'),
@@ -89,7 +89,7 @@ class APIClient(object):
                     if create:
                         return obj_id
                     else:
-                        return getattr(pysparkapi, resp['class'])(_id=obj_id)
+                        return getattr(pysparkrpc, resp['class'])(_id=obj_id)
 
             elif resp['class'] == 'pickle':
                 return pickle.loads(base64.b64decode(resp['value']))

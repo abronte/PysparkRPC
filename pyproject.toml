@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "PysparkAPI"
+name = "PysparkRPC"
 version = "0.1.0"
 description = ""
 authors = ["Adam Bronte <adam@bronte.me>"]

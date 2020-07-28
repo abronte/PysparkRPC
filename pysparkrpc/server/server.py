@@ -1,5 +1,4 @@
 import uuid
-from io import StringIO
 import sys
 import types
 import pickle
@@ -7,6 +6,7 @@ import base64
 import threading, queue
 
 import pysparkrpc
+from pysparkrpc.server.capture import Capture
 
 import pyspark
 import pyspark.sql.functions
@@ -20,17 +20,6 @@ RESPONSE_CACHE = {}
 
 REQ_QUEUE = queue.Queue()
 RESP_QUEUE = queue.Queue()
-
-class Capture(list):
-    def __enter__(self):
-        self._stdout = sys.stdout
-        sys.stdout = self._stringio = StringIO()
-        return self
-
-    def __exit__(self, *args):
-        self.extend(self._stringio.getvalue().splitlines())
-        del self._stringio
-        sys.stdout = self._stdout
 
 def retrieve_object(obj):
     global OBJECTS
@@ -130,7 +119,7 @@ def handle_object(obj, result={}):
     return result
 
 def call_worker():
-    global OBJECTS, REQ_QUEUE, RESP_QUEUE, RESPONSE_CACHE
+    global OBJECTS, REQ_QUEUE, RESP_QUEUE, RESPONSE_CACHE, Capture
 
     while True:
         req = REQ_QUEUE.get()
@@ -155,7 +144,7 @@ def call_worker():
             'module': None,
             'class': None,
             'exception': None,
-            'stdout': None
+            'stdout': []
         }
 
         if req['object_id'] != None:
@@ -196,10 +185,10 @@ def call_worker():
                     res_obj = callable_obj[req['function']]
                 else:
                     res_obj = callable_obj(*args, **kwargs)
+
+                resp['stdout'] = stdout
         except Exception as e:
             resp['exception'] = str(e)
-
-        resp['stdout'] = stdout
 
         print(res_obj)
 

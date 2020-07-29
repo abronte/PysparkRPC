@@ -10,7 +10,6 @@ import httpx
 import cloudpickle
 
 import pysparkrpc
-# from pysparkrpc.proxy import ProxyJavaObject
 
 PROXY_URL = 'http://localhost:8765'
 

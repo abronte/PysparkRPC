@@ -47,7 +47,7 @@ def status(print_status=True):
 
     if pid == False:
         if print_status:
-            print('Pyspark proxy server is not running.')
+            print('Pysparkrpc server is not running.')
 
         return False
     else:
@@ -55,12 +55,12 @@ def status(print_status=True):
             os.kill(pid, 0)
         except OSError:
             if print_status:
-                print('Pyspark proxy server is not running.')
+                print('Pysparkrpc server is not running.')
 
             return False
         else:
             if print_status:
-                print('Pyspark proxy server is running. Pid: %d' % pid)
+                print('Pysparkrpc server is running. Pid: %d' % pid)
 
             return True
 

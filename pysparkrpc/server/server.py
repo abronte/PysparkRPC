@@ -1,18 +1,23 @@
 import uuid
-from io import StringIO
 import sys
 import types
 import pickle
 import base64
-import threading, queue
+import threading
+import queue
+import logging
+
+logger = logging.getLogger()
 
 import pysparkrpc
+from pysparkrpc.server.capture import Capture
 
 import pyspark
 import pyspark.sql.functions
 import cloudpickle
 
 from flask import Flask, request, jsonify
+from flask.logging import default_handler
 app = Flask(__name__)
 
 OBJECTS = {}
@@ -21,23 +26,12 @@ RESPONSE_CACHE = {}
 REQ_QUEUE = queue.Queue()
 RESP_QUEUE = queue.Queue()
 
-class Capture(list):
-    def __enter__(self):
-        self._stdout = sys.stdout
-        sys.stdout = self._stringio = StringIO()
-        return self
-
-    def __exit__(self, *args):
-        self.extend(self._stringio.getvalue().splitlines())
-        del self._stringio
-        sys.stdout = self._stdout
-
 def retrieve_object(obj):
     global OBJECTS
 
     if type(obj) == dict and '_PROXY_ID' in obj:
         id = obj['_PROXY_ID']
-        print('Retrieving object id: %s' % id)
+        logger.debug('Retrieving object id: %s' % id)
 
         return OBJECTS[id]
     else:
@@ -112,7 +106,7 @@ def handle_object(obj, result={}):
         # if the resulting object can be pickled just send the raw object
         # REFACTOR:
         if 'types.Row' in obj_str or 'pandas.' in obj_str or list == type(obj):
-            print('Pickling object type %s' % (str(type(obj))))
+            logger.debug('Pickling object type %s' % (str(type(obj))))
             result['class'] = 'pickle'
             result['value'] = str(base64.b64encode(pickle.dumps(obj, 2)), 'utf-8')
         elif 'pyspark' in str(obj.__class__) or type(obj) == types.FunctionType:
@@ -130,19 +124,19 @@ def handle_object(obj, result={}):
     return result
 
 def call_worker():
-    global OBJECTS, REQ_QUEUE, RESP_QUEUE, RESPONSE_CACHE
+    global OBJECTS, REQ_QUEUE, RESP_QUEUE, RESPONSE_CACHE, Capture
 
     while True:
         req = REQ_QUEUE.get()
         REQ_QUEUE.task_done()
 
-        print('Request:')
-        print(req)
+        logger.debug('Request:')
+        logger.debug(req)
 
         digest = req['digest']
 
         if digest in RESPONSE_CACHE:
-            print(f'Returning cached response for {digest}')
+            logger.debug(f'Returning cached response for {digest}')
             RESP_QUEUE.put(RESPONSE_CACHE[digest])
             continue
 
@@ -155,7 +149,7 @@ def call_worker():
             'module': None,
             'class': None,
             'exception': None,
-            'stdout': None
+            'stdout': []
         }
 
         if req['object_id'] != None:
@@ -185,8 +179,6 @@ def call_worker():
                 callable_obj = module
 
         args, kwargs = parse_request_args(req['function'], req['args'], req['kwargs'])
-        print(args)
-        print(kwargs)
 
         try:
             with Capture() as stdout:
@@ -196,17 +188,15 @@ def call_worker():
                     res_obj = callable_obj[req['function']]
                 else:
                     res_obj = callable_obj(*args, **kwargs)
+
+                resp['stdout'] = stdout
         except Exception as e:
             resp['exception'] = str(e)
 
-        resp['stdout'] = stdout
-
-        print(res_obj)
-
         resp = handle_object(res_obj, resp)
 
-        print('Response:')
-        print(resp)
+        logger.debug('Response:')
+        logger.debug(resp)
 
         RESPONSE_CACHE[digest] = resp
         RESP_QUEUE.put(resp)
@@ -214,8 +204,6 @@ def call_worker():
 @app.route('/call', methods=['POST'])
 def call():
     global OBJECTS
-
-    print('/call')
 
     req = request.json
     REQ_QUEUE.put(req)
@@ -251,6 +239,12 @@ def clear():
 
 def run(*args, **kwargs):
     threading.Thread(target=call_worker, daemon=True).start()
+
+    if 'debug' not in kwargs or ('debug' in kwargs and kwargs['debug'] == False):
+        app.logger.removeHandler(default_handler)
+        app.logger = logger
+
+        logger.info('Starting pysparkrpc web server')
 
     if 'port' not in kwargs:
         kwargs['port'] = 8765

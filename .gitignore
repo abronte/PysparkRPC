@@ -1,3 +1,6 @@
+.DS_Store
+.coverage
+htmlcov
 *.pyc
 __pycache__
 pysparkapi.egg-info/

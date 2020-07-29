@@ -137,9 +137,6 @@ class APIClient(object):
             v = kwargs[a]
             prepared_kwargs[a] = cls._proxy_obj_replace(v)
 
-        # prepared_args = str(base64.b64encode(pickle.dumps(args, 2)), 'utf-8')
-        # prepared_kwargs = str(base64.b64encode(pickle.dumps(kwargs, 2)), 'utf-8')
-
         return prepared_args, prepared_kwargs
 
     @classmethod

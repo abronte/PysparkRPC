@@ -34,6 +34,14 @@ TARGET_OBJS = [
     pyspark.sql.udf.UDFRegistration
 ]
 
+# pyspark will make classes available via the root module
+# we need to specifically inject our clases into these as well
+TARGET_ALIAS = {
+    'SparkContext': 'pyspark',
+    'SQLContext': 'pyspark.sql',
+    'SparkSession': 'pyspark.sql'
+}
+
 TARGET_ALL_MODULES = [
     pyspark.ml.classification,
     pyspark.ml.clustering,
@@ -86,6 +94,10 @@ def inject():
         obj_module = c.__module__
 
         setattr(sys.modules[obj_module], obj_name, globals()[obj_name])
+
+        if obj_name in TARGET_ALIAS:
+            setattr(sys.modules[TARGET_ALIAS[obj_name]], obj_name, globals()[obj_name])
+
 
 def _handle_spark_versions():
     major = PYSPARK_VERSION[0]

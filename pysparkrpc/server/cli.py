@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import sys
 import os
 import time
@@ -74,7 +73,7 @@ def stop():
     else:
         print('Pysparkrpc server is not running.')
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='Pysparkrpc Server')
 
     required = parser.add_argument_group('required arguments')
@@ -93,3 +92,6 @@ if __name__ == '__main__':
         stop()
     elif args.action == 'status':
         status()
+
+if __name__ == "__main__":
+    main()

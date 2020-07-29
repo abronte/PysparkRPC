@@ -10,6 +10,7 @@ import httpx
 import cloudpickle
 
 import pysparkrpc
+# from pysparkrpc.proxy import ProxyJavaObject
 
 PROXY_URL = 'http://localhost:8765'
 
@@ -83,6 +84,8 @@ class APIClient(object):
                     f_func = types.FunctionType(f_code.co_consts[0], globals())
 
                     return f_func
+                elif resp['class'] == 'JavaObject':
+                    return pysparkrpc.proxy.ProxyJavaObject(_id=resp['object_id'])
                 else:
                     # don't initalize a new object if this is getting called from __init__
                     if create:

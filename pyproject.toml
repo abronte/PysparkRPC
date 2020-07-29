@@ -1,8 +1,11 @@
 [tool.poetry]
 name = "PysparkRPC"
 version = "0.1.0"
-description = ""
+description = "Seamlessly run Pyspark code on remote clusters."
 authors = ["Adam Bronte <adam@bronte.me>"]
+repository = "https://github.com/abronte/PysparkRPC"
+readme = "README.rst"
+license = "MIT"
 
 [tool.poetry.scripts]
 pysparkrpc = "pysparkrpc.server.cli:main"
@@ -20,3 +23,6 @@ pytest = "^5.2"
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
+[tool.poetry.urls]
+issues = "https://github.com/abronte/PysparkRPC/issues"

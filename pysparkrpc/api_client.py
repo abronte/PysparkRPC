@@ -56,11 +56,10 @@ class APIClient(object):
             resp = r.json()
 
             if resp['status'] == 'complete':
+                cls._req_num += 1
                 return cls._handle_response(resp, create)
 
             time.sleep(0.1)
-
-        cls._req_num += 1
 
     @classmethod
     def clear(cls):

@@ -130,6 +130,8 @@ class APIClient(object):
             elif arg_type == types.FunctionType:
                 pickled_f = str(base64.b64encode(cloudpickle.dumps(_copy_func(a))), 'utf-8')
                 prepared_args.append({'_CLOUDPICKLE': pickled_f})
+            elif 'pyspark.sql.types' in str(arg_type):
+                prepared_args.append({'_CLOUDPICKLE': str(base64.b64encode(cloudpickle.dumps(a)), 'utf-8')})
             else:
                 prepared_args.append(cls._proxy_obj_replace(a))
 

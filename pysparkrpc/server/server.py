@@ -140,7 +140,11 @@ def call_worker():
 
         if digest in RESPONSE_CACHE:
             logger.info(f'Returning cached response for {digest}')
-            RESP_QUEUE.put(RESPONSE_CACHE[digest])
+
+            resp = RESPONSE_CACHE[digest]
+            resp['cached'] = True
+
+            RESP_QUEUE.put(resp)
             continue
 
         res_obj = None
@@ -152,7 +156,8 @@ def call_worker():
             'module': None,
             'class': None,
             'exception': None,
-            'stdout': []
+            'stdout': [],
+            'cached': False
         }
 
         if req['object_id'] != None:
@@ -201,7 +206,9 @@ def call_worker():
         logger.info('Response:')
         logger.info(resp)
 
-        RESPONSE_CACHE[digest] = resp
+        if req['cache']:
+            RESPONSE_CACHE[digest] = resp
+
         RESP_QUEUE.put(resp)
 
 @app.route('/call', methods=['POST'])

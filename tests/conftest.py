@@ -12,7 +12,7 @@ from pyspark.sql.context import SQLContext
 def pytest_sessionstart(session):
     print('Starting spark context')
 
-    pysparkrpc.APIClient.clear()
+    pysparkrpc.clear()
 
     sc = SparkContext()
     sqlContext = SQLContext(sc)

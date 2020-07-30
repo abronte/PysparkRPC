@@ -83,6 +83,8 @@ class APIClient(object):
                     f_func = types.FunctionType(f_code.co_consts[0], globals())
 
                     return f_func
+                elif resp['class'] == 'JavaObject':
+                    return pysparkrpc.proxy.ProxyJavaObject(_id=resp['object_id'])
                 else:
                     # don't initalize a new object if this is getting called from __init__
                     if create:
@@ -134,9 +136,6 @@ class APIClient(object):
         for a in kwargs:
             v = kwargs[a]
             prepared_kwargs[a] = cls._proxy_obj_replace(v)
-
-        # prepared_args = str(base64.b64encode(pickle.dumps(args, 2)), 'utf-8')
-        # prepared_kwargs = str(base64.b64encode(pickle.dumps(kwargs, 2)), 'utf-8')
 
         return prepared_args, prepared_kwargs
 

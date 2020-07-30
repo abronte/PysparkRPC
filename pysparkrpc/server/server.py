@@ -7,10 +7,11 @@ import threading
 import queue
 import logging
 
-logger = logging.getLogger()
-
 import pysparkrpc
 from pysparkrpc.server.capture import Capture
+from pysparkrpc.server.logger import logger, configure_logging
+
+logger = logging.getLogger()
 
 import pyspark
 import pyspark.sql.functions
@@ -31,7 +32,7 @@ def retrieve_object(obj):
 
     if type(obj) == dict and '_PROXY_ID' in obj:
         id = obj['_PROXY_ID']
-        logger.debug('Retrieving object id: %s' % id)
+        logger.info('Retrieving object id: %s' % id)
 
         return OBJECTS[id]
     else:
@@ -103,13 +104,15 @@ def handle_object(obj, result={}):
         result['object'] = True
         result['class'] = obj.__class__.__name__
 
+        class_str = str(obj.__class__)
+
         # if the resulting object can be pickled just send the raw object
         # REFACTOR:
         if 'types.Row' in obj_str or 'pandas.' in obj_str or list == type(obj):
-            logger.debug('Pickling object type %s' % (str(type(obj))))
+            logger.info('Pickling object type %s' % (str(type(obj))))
             result['class'] = 'pickle'
             result['value'] = str(base64.b64encode(pickle.dumps(obj, 2)), 'utf-8')
-        elif 'pyspark' in str(obj.__class__) or type(obj) == types.FunctionType:
+        elif 'pyspark' in class_str or 'py4j' in class_str or type(obj) == types.FunctionType:
             id = str(uuid.uuid4())
             OBJECTS[id] = obj
 
@@ -124,19 +127,19 @@ def handle_object(obj, result={}):
     return result
 
 def call_worker():
-    global OBJECTS, REQ_QUEUE, RESP_QUEUE, RESPONSE_CACHE, Capture
+    global OBJECTS, REQ_QUEUE, RESP_QUEUE, RESPONSE_CACHE, Capture, logger
 
     while True:
         req = REQ_QUEUE.get()
         REQ_QUEUE.task_done()
 
-        logger.debug('Request:')
-        logger.debug(req)
+        logger.info('Request:')
+        logger.info(req)
 
         digest = req['digest']
 
         if digest in RESPONSE_CACHE:
-            logger.debug(f'Returning cached response for {digest}')
+            logger.info(f'Returning cached response for {digest}')
             RESP_QUEUE.put(RESPONSE_CACHE[digest])
             continue
 
@@ -195,8 +198,8 @@ def call_worker():
 
         resp = handle_object(res_obj, resp)
 
-        logger.debug('Response:')
-        logger.debug(resp)
+        logger.info('Response:')
+        logger.info(resp)
 
         RESPONSE_CACHE[digest] = resp
         RESP_QUEUE.put(resp)
@@ -252,4 +255,5 @@ def run(*args, **kwargs):
     app.run(*args, **kwargs)
 
 if __name__ == '__main__':
-    run(host='127.0.0.1', debug=True, use_reloader=False, port=8765)
+	configure_logging(True, 'INFO')
+	run(host='127.0.0.1', debug=True, use_reloader=False, port=8765)

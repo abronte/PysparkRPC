@@ -18,3 +18,10 @@ class Proxy(object):
             self._id = kwargs['_id']
         elif self._path and self._propclass == False:
             self._id = APIClient.call(None, self._path, None, args, kwargs, create=True)
+
+class ProxyJavaObject(Proxy):
+    def __getattr__(self, name):
+        def method(*args, **kwargs):
+            return APIClient.call(self._id, None, name, args, kwargs)
+
+        return method

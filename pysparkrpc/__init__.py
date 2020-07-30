@@ -15,7 +15,7 @@ from pyspark.version import __version__ as PYSPARK_VERSION
 import pyspark.sql.functions
 import pyspark.ml
 
-from pysparkrpc.proxy import Proxy
+from pysparkrpc.proxy import Proxy, ProxyJavaObject
 from pysparkrpc.api_client import APIClient
 
 __version__ = '0.1.0'
@@ -52,6 +52,10 @@ TARGET_ALL_MODULES = [
 
 MONKEY_PATCH_FUNCS = {
     pyspark.rdd.RDD: ['toDF']
+}
+
+MONKEY_PATCH_PROPS = {
+    pyspark.context.SparkContext: ['_jsc']
 }
 
 for m in TARGET_ALL_MODULES:
@@ -133,6 +137,12 @@ def _build_class(obj, path=None):
             patch_code = compile(f'def {f}(self, *args, **kwargs): return APIClient.call(self._id, self._path, "{f}", args, kwargs)', '<string>', 'exec')
             patch_func = FunctionType(patch_code.co_consts[0], globals())
             setattr(proxy_class, f, patch_func)
+
+    if obj in MONKEY_PATCH_PROPS:
+        for f in MONKEY_PATCH_PROPS[obj]:
+            patch_code = compile(f'def {f}(self): return APIClient.call(self._id, self._path, "{f}", is_property=True)', '<string>', 'exec')
+            patch_func = FunctionType(patch_code.co_consts[0], globals())
+            setattr(proxy_class, f, property(patch_func))
 
     for f in obj_names:
 

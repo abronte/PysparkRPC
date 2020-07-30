@@ -127,7 +127,9 @@ def _build_class(obj, path=None):
     obj_names = dir(obj)
 
     for f in BUILTIN_FUNCS:
-        if f in obj_names:
+        # don't override the builtin if pyspark didn't override it
+        # built in functions return as the class wrapper_descriptor
+        if f in obj_names and getattr(obj, f).__class__.__name__ != 'wrapper_descriptor':
             patch_code = compile(f'def {f}(self, *args, **kwargs): return APIClient.call(self._id, self._path, "{f}", args, kwargs)', '<string>', 'exec')
             patch_func = FunctionType(patch_code.co_consts[0], globals())
             setattr(proxy_class, f, patch_func)

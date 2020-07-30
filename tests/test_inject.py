@@ -22,3 +22,10 @@ def test_spark_session_proxy_object():
 
     assert s1.__bases__[0] == Proxy
     assert s2.__bases__[0] == Proxy
+
+def test_eq_operator_not_added():
+    sc = pytest.sc
+    spark = pytest.spark
+
+    assert sc != None
+    assert spark != None

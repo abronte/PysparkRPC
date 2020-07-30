@@ -7,12 +7,16 @@ class Proxy(object):
     _PROXY = True
     _path = None
     _propclass = False
+    _cached = False
 
     def __init__(self, *args, **kwargs):
         self._kwargs = kwargs
         self._class = self.__class__.__name__
         self._args = args
         self._id = None
+
+        if '_cached' in kwargs:
+            self._cached = kwargs['_cached']
 
         if '_id' in kwargs:
             self._id = kwargs['_id']

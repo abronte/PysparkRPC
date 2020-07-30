@@ -12,6 +12,7 @@ import cloudpickle
 import pysparkrpc
 
 PROXY_URL = 'http://localhost:8765'
+CACHING = True
 
 def _copy_func(f):
     g = types.FunctionType(f.__code__, f.__globals__, name=f.__name__,
@@ -21,7 +22,6 @@ def _copy_func(f):
     return g
 
 class APIClient(object):
-    _req_num = 0
     http = httpx.Client(timeout=60.0)
 
     @classmethod
@@ -42,8 +42,13 @@ class APIClient(object):
             'kwargs': function_args[1],
             'is_property': is_property,
             'is_item': is_item,
-            'req_num': cls._req_num # used to salt digests incase multiple objects are created with the same params
+            'cache': True
         }
+
+        # if we want to force no caching then add a salt to
+        # the payload to create a unique digest
+        if CACHING == False:
+            body['cache'] = False
 
         body['digest'] = hashlib.sha1(json.dumps(body).encode('utf-8')).hexdigest()
 
@@ -56,7 +61,6 @@ class APIClient(object):
             resp = r.json()
 
             if resp['status'] == 'complete':
-                cls._req_num += 1
                 return cls._handle_response(resp, create)
 
             time.sleep(0.1)
@@ -84,13 +88,13 @@ class APIClient(object):
 
                     return f_func
                 elif resp['class'] == 'JavaObject':
-                    return pysparkrpc.proxy.ProxyJavaObject(_id=resp['object_id'])
+                    return pysparkrpc.proxy.ProxyJavaObject(_id=resp['object_id'], _cached=resp['cached'])
                 else:
                     # don't initalize a new object if this is getting called from __init__
                     if create:
                         return obj_id
                     else:
-                        return getattr(pysparkrpc, resp['class'])(_id=obj_id)
+                        return getattr(pysparkrpc, resp['class'])(_id=obj_id, _cached=resp['cached'])
 
             elif resp['class'] == 'pickle':
                 return pickle.loads(base64.b64decode(resp['value']))

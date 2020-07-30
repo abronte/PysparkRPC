@@ -16,6 +16,7 @@ import pyspark.sql.functions
 import pyspark.ml
 
 from pysparkrpc.proxy import Proxy, ProxyJavaObject
+import pysparkrpc.api_client as api
 from pysparkrpc.api_client import APIClient
 
 __version__ = '0.4.0'
@@ -102,6 +103,16 @@ def inject():
         if obj_name in TARGET_ALIAS:
             setattr(sys.modules[TARGET_ALIAS[obj_name]], obj_name, globals()[obj_name])
 
+def cache(set_to=True):
+    api.CACHING = set_to
+
+    if set_to:
+        print('PysparkRPC caching ON')
+    else:
+        print('PysparkRPC caching OFF')
+
+def clear():
+    APIClient.clear()
 
 def _handle_spark_versions():
     major = PYSPARK_VERSION[0]

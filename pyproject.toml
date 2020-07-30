@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "PysparkRPC"
-version = "0.1.0"
+version = "0.2.0"
 description = "Seamlessly run Pyspark code on remote clusters."
 authors = ["Adam Bronte <adam@bronte.me>"]
 repository = "https://github.com/abronte/PysparkRPC"

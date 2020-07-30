@@ -23,6 +23,7 @@ app = Flask(__name__)
 
 OBJECTS = {}
 RESPONSE_CACHE = {}
+IN_PROGRESS = None
 
 REQ_QUEUE = queue.Queue()
 RESP_QUEUE = queue.Queue()
@@ -127,16 +128,16 @@ def handle_object(obj, result={}):
     return result
 
 def call_worker():
-    global OBJECTS, REQ_QUEUE, RESP_QUEUE, RESPONSE_CACHE, Capture, logger
+    global OBJECTS, REQ_QUEUE, RESP_QUEUE, RESPONSE_CACHE, IN_PROGRESS, Capture, logger
 
     while True:
         req = REQ_QUEUE.get()
-        REQ_QUEUE.task_done()
 
         logger.info('Request:')
         logger.info(req)
 
         digest = req['digest']
+        IN_PROGRESS = digest
 
         if digest in RESPONSE_CACHE:
             logger.info(f'Returning cached response for {digest}')
@@ -206,17 +207,19 @@ def call_worker():
         logger.info('Response:')
         logger.info(resp)
 
-        if req['cache']:
+        if req['cache'] and resp['exception'] == None:
             RESPONSE_CACHE[digest] = resp
 
+        IN_PROGRESS = None
         RESP_QUEUE.put(resp)
+        REQ_QUEUE.task_done()
 
 @app.route('/call', methods=['POST'])
 def call():
-    global OBJECTS
-
     req = request.json
-    REQ_QUEUE.put(req)
+
+    if IN_PROGRESS != req['digest']:
+        REQ_QUEUE.put(req)
 
     return 'OK'
 

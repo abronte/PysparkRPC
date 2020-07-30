@@ -29,3 +29,18 @@ def test_toggle_cache_result():
     assert result_df2._cached == False
 
     cache(True)
+
+def test_no_cache_on_exception():
+    query = 'select count(*) AS cnt from table'
+
+    try:
+        df = spark.sql(query)
+    except:
+        pass
+
+    table_df = spark.createDataFrame([{'a':1,'b':2},{'a':1,'b':2}], ['a','b'])
+    table_df.createOrReplaceTempView('table')
+
+    rows = spark.sql(query).collect()
+
+    assert rows[0].cnt == 2

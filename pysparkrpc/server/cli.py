@@ -34,7 +34,7 @@ def start_background(args):
 
 def start_server(args):
     import pysparkrpc.server as server
-    server.run(host=args.host, port=args.port)
+    server.run(host=args.host, port=args.port, auth=args.auth)
 
 def load_pid():
     try:
@@ -81,6 +81,7 @@ def main():
 
     parser.add_argument('--port', help='Port to bind to. Default: 8765', type=int, default=8765)
     parser.add_argument('--host', help='Host to bind to. Default: 0.0.0.0', type=str, default='0.0.0.0')
+    parser.add_argument('--auth', help='Set an authentication token to authenticate the client', type=str, default='')
     parser.add_argument('--foreground', help='Starts server in the foreground', action='store_true')
     parser.add_argument('--log-level', help='Sets logging level. Default: INFO', type=str, default='INFO')
 

@@ -10,6 +10,7 @@ try:
 except:
     pass
 
+import httpx
 import pyspark
 from pyspark.version import __version__ as PYSPARK_VERSION
 import pyspark.sql.functions
@@ -81,7 +82,12 @@ PICKLE_FUNCS = [
     'predict'
 ]
 
-def inject():
+def inject(url='http://localhost:8765', auth=None):
+    if auth != None:
+        APIClient.http = httpx.Client(timeout=60.0, headers={'Auth':auth})
+
+    api.PROXY_URL=url
+
     _handle_spark_versions()
 
     for m in TARGET_FUNCTIONS:

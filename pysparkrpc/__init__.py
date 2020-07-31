@@ -20,7 +20,7 @@ from pysparkrpc.proxy import Proxy, ProxyJavaObject
 import pysparkrpc.api_client as api
 from pysparkrpc.api_client import APIClient
 
-__version__ = '0.4.0'
+__version__ = '0.5.0'
 
 TARGET_OBJS = [
     pyspark.rdd.RDD,

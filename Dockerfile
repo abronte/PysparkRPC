@@ -15,4 +15,4 @@ RUN poetry export -f requirements.txt > requirements.txt && pip install -r requi
 
 ENV PYTHONPATH /srv
 
-CMD python pysparkrpc/server/cli.py start && pytest
+CMD python pysparkrpc/server/cli.py start --auth abc123 && pytest

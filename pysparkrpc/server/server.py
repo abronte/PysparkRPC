@@ -214,6 +214,18 @@ def call_worker():
         RESP_QUEUE.put(resp)
         REQ_QUEUE.task_done()
 
+@app.before_request
+def authenticate():
+    if app.auth_token != None:
+        auth = None
+
+        if 'Auth' in request.headers:
+            auth = request.headers['Auth']
+
+        if auth != app.auth_token:
+            return 'Authentication failed', 401
+
+
 @app.route('/call', methods=['POST'])
 def call():
     req = request.json
@@ -258,6 +270,13 @@ def run(*args, **kwargs):
         app.logger = logger
 
         logger.info('Starting pysparkrpc web server')
+
+    if 'auth' in kwargs and kwargs['auth'] != '':
+        app.auth_token = kwargs['auth']
+    else:
+        app.auth_token = None
+
+    del kwargs['auth']
 
     if 'port' not in kwargs:
         kwargs['port'] = 8765

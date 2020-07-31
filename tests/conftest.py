@@ -3,7 +3,7 @@ from multiprocessing import Process
 import pytest
 
 import pysparkrpc
-pysparkrpc.inject()
+pysparkrpc.inject(url='http://127.0.0.1:8765', auth='abc123')
 
 from pyspark.sql.session import SparkSession
 from pyspark.context import SparkContext

@@ -1,3 +1,5 @@
+__version__ = '0.6.0'
+
 from types import FunctionType
 import sys
 import os
@@ -19,8 +21,6 @@ import pyspark.ml
 from pysparkrpc.proxy import Proxy, ProxyJavaObject
 import pysparkrpc.api_client as api
 from pysparkrpc.api_client import APIClient
-
-__version__ = '0.5.0'
 
 TARGET_OBJS = [
     pyspark.rdd.RDD,

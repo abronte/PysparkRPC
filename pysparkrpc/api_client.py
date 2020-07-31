@@ -34,7 +34,7 @@ class APIClient(object):
         else:
             function_args = cls._prepare_args(args, kwargs)
 
-        body = {
+        req = {
             'object_id': object_id,
             'path': path,
             'function': function,
@@ -48,22 +48,23 @@ class APIClient(object):
         # if we want to force no caching then add a salt to
         # the payload to create a unique digest
         if CACHING == False:
-            body['cache'] = False
+            req['cache'] = False
 
-        body['digest'] = hashlib.sha1(json.dumps(body).encode('utf-8')).hexdigest()
+        req['digest'] = hashlib.sha1(json.dumps(req).encode('utf-8')).hexdigest()
 
-        print(body)
+        print(req)
 
-        cls.http.post(PROXY_URL+'/call', json=body)
+        r = cls.http.post(PROXY_URL+'/call', json=req)
+        resp = r.json()
 
         while True:
-            r = cls.http.get(PROXY_URL+'/response')
-            resp = r.json()
-
-            if resp['status'] == 'complete':
+            if resp['status'] == 'complete' and resp['digest'] == req['digest']:
                 return cls._handle_response(resp, create)
 
             time.sleep(0.1)
+
+            r = cls.http.get(PROXY_URL+'/response')
+            resp = r.json()
 
     @classmethod
     def clear(cls):

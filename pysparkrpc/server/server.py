@@ -285,4 +285,4 @@ def run(*args, **kwargs):
 
 if __name__ == '__main__':
 	configure_logging(True, 'INFO')
-	run(host='127.0.0.1', debug=True, use_reloader=False, port=8765)
+	run(host='127.0.0.1', debug=True, use_reloader=False, port=8765, auth='')

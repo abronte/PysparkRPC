@@ -22,6 +22,7 @@ def _copy_func(f):
     return g
 
 class APIClient(object):
+    response_cache = {}
     http = httpx.Client(timeout=60.0)
 
     @classmethod
@@ -50,18 +51,27 @@ class APIClient(object):
         if CACHING == False:
             req['cache'] = False
 
-        req['digest'] = hashlib.sha1(json.dumps(req).encode('utf-8')).hexdigest()
+        digest = hashlib.sha1(json.dumps(req).encode('utf-8')).hexdigest()
+        req['digest'] = digest
 
         print(req)
+
+        if digest in cls.response_cache and req['cache']:
+            print(f'Using local cache for {digest}')
+            resp = cls.response_cache[digest]
+            resp['cached'] = True
+
+            return cls._handle_response(resp, create)
 
         r = cls.http.post(PROXY_URL+'/call', json=req)
         resp = r.json()
 
         while True:
-            if resp['status'] == 'complete' and resp['digest'] == req['digest']:
-                return cls._handle_response(resp, create)
+            if resp['status'] == 'complete' and resp['digest'] == digest:
+                if resp['exception'] == None:
+                    cls.response_cache[digest] = resp
 
-            time.sleep(0.1)
+                return cls._handle_response(resp, create)
 
             r = cls.http.get(PROXY_URL+'/response')
             resp = r.json()

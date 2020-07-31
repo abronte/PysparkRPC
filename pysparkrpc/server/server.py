@@ -6,6 +6,7 @@ import base64
 import threading
 import queue
 import logging
+import time
 
 import pysparkrpc
 from pysparkrpc.server.capture import Capture
@@ -241,6 +242,17 @@ def call():
 
 @app.route('/response', methods=['GET'])
 def response():
+    num = 0
+
+    # pesudo long polling. give some time for the action
+    # to run but dont keep open forever
+    while RESP_QUEUE.empty():
+        time.sleep(0.01+(num/100))
+        num += 1
+
+        if num > 100:
+            break
+
     if RESP_QUEUE.empty():
         resp = {'status':'pending'}
     else:

@@ -23,6 +23,7 @@ import pysparkrpc.api_client as api
 from pysparkrpc.api_client import APIClient
 
 TARGET_OBJS = [
+    pyspark.broadcast.Broadcast,
     pyspark.rdd.RDD,
     pyspark.rdd.PipelinedRDD,
     pyspark.context.SparkContext,

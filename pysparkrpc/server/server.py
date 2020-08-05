@@ -16,6 +16,7 @@ logger = logging.getLogger()
 
 import pyspark
 import pyspark.sql.functions
+from pyspark.broadcast import Broadcast
 import cloudpickle
 
 from flask import Flask, request, jsonify
